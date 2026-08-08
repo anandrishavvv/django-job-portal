@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ job.title }}
+{% endblock %}
+
+{% block content %}
+
+<h2>{{ job.title }}</h2>
+
+<p>
+    <strong>Company:</strong>
+    {{ job.company }}
+</p>
+
+<p>
+    <strong>Location:</strong>
+    {{ job.location }}
+</p>
+
+<p>
+    <strong>Remote:</strong>
+
+    {% if job.remote %}
+        Yes
+    {% else %}
+        No
+    {% endif %}
+</p>
+
+<hr>
+
+<a href="{% url 'job_list' %}">
+    Back
+</a>
+
+|
+
+<a href="{% url 'update_job' job.id %}">
+    Edit
+</a>
+
+|
+
+<a href="{% url 'delete_job' job.id %}">
+    Delete
+</a>
+
+{% endblock %}
