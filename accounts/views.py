@@ -84,24 +84,24 @@ def upload_resume(request):
             instance=profile
         )
 
-        if form.is_valid():
+    if form.is_valid():
 
-            profile = form.save(commit=False)
+     profile = form.save(commit=False)
 
-            profile.user = request.user
+    profile.user = request.user
 
-            profile.save()
+    # Delete old resume if uploading a new one
+    if request.user.candidateprofile:
+        old_profile = request.user.candidateprofile
 
-            return redirect("job_list")
+        if (
+            old_profile.resume
+            and "resume" in request.FILES
+            and old_profile.resume != profile.resume
+        ):
+            old_profile.resume.delete(save=False)
 
-    else:
+    profile.save()
 
-        form = CandidateProfileForm(instance=profile)
-
-    return render(
-        request,
-        "accounts/upload_resume.html",
-        {
-            "form": form
-        }
-    )
+    return redirect("job_list")
+ 
