@@ -1,14 +1,10 @@
-from django.shortcuts import (
-    render,
-    
-)
-
-from django.core.paginator import Paginator
+from django.shortcuts import render
 from django.db.models import Q
+from django.urls import reverse_lazy
 
-from .models import Job, Company
-from .forms import JobForm
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+
 from django.views.generic import (
     ListView,
     DetailView,
@@ -16,14 +12,19 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
 )
-from django.urls import reverse_lazy
-from django.contrib.auth.mixins import LoginRequiredMixin
+
+from rest_framework import generics, mixins, status
+from rest_framework.response import Response
+
+from .models import Job, Company
+from .forms import JobForm
+from .serializers import JobSerializer
 from .mixins import RecruiterRequiredMixin
 
 
-
-
-
+# ==========================================================
+# WEBSITE VIEWS
+# ==========================================================
 
 @login_required
 def company_jobs(request, company_name):
@@ -40,7 +41,7 @@ def company_jobs(request, company_name):
     return render(
         request,
         "jobs/company_jobs.html",
-        context
+        context,
     )
 
 
@@ -66,7 +67,6 @@ class JobListView(LoginRequiredMixin, ListView):
         remote = self.request.GET.get("remote")
         sort = self.request.GET.get("sort")
 
-        # Search
         if search:
 
             queryset = queryset.filter(
@@ -75,28 +75,24 @@ class JobListView(LoginRequiredMixin, ListView):
                 Q(location__icontains=search)
             )
 
-        # Company Filter
         if company:
 
             queryset = queryset.filter(
                 company__name=company
             )
 
-        # Location Filter
         if location:
 
             queryset = queryset.filter(
                 location=location
             )
 
-        # Remote Filter
         if remote:
 
             queryset = queryset.filter(
                 remote=True
             )
 
-        # Sorting
         if sort == "title":
 
             queryset = queryset.order_by("title")
@@ -139,6 +135,8 @@ class JobListView(LoginRequiredMixin, ListView):
         ).distinct()
 
         return context
+
+
 class JobDetailView(LoginRequiredMixin, DetailView):
 
     model = Job
@@ -150,9 +148,11 @@ class JobDetailView(LoginRequiredMixin, DetailView):
     pk_url_kwarg = "job_id"
 
 
-
-
-class JobCreateView(LoginRequiredMixin,RecruiterRequiredMixin,CreateView):
+class JobCreateView(
+    LoginRequiredMixin,
+    RecruiterRequiredMixin,
+    CreateView
+):
 
     model = Job
 
@@ -163,7 +163,11 @@ class JobCreateView(LoginRequiredMixin,RecruiterRequiredMixin,CreateView):
     success_url = reverse_lazy("job_list")
 
 
-class JobUpdateView(LoginRequiredMixin,RecruiterRequiredMixin,UpdateView):
+class JobUpdateView(
+    LoginRequiredMixin,
+    RecruiterRequiredMixin,
+    UpdateView
+):
 
     model = Job
 
@@ -175,7 +179,12 @@ class JobUpdateView(LoginRequiredMixin,RecruiterRequiredMixin,UpdateView):
 
     success_url = reverse_lazy("job_list")
 
-class JobDeleteView(LoginRequiredMixin,RecruiterRequiredMixin,DeleteView):
+
+class JobDeleteView(
+    LoginRequiredMixin,
+    RecruiterRequiredMixin,
+    DeleteView
+):
 
     model = Job
 
@@ -184,3 +193,31 @@ class JobDeleteView(LoginRequiredMixin,RecruiterRequiredMixin,DeleteView):
     pk_url_kwarg = "job_id"
 
     success_url = reverse_lazy("job_list")
+
+
+# ==========================================================
+# DRF API VIEWS
+# ==========================================================
+
+from rest_framework import generics
+
+
+class JobListAPIView(generics.ListCreateAPIView):
+
+    queryset = Job.objects.select_related(
+        "company"
+    ).all()
+
+    serializer_class = JobSerializer
+
+class JobDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+
+    queryset = Job.objects.select_related(
+        "company"
+    ).all()
+
+    serializer_class = JobSerializer
+
+    lookup_field = "id"
+
+    lookup_url_kwarg = "job_id"
