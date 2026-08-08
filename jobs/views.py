@@ -221,3 +221,14 @@ class JobDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "id"
 
     lookup_url_kwarg = "job_id"
+
+
+from rest_framework import viewsets
+
+class JobViewSet(viewsets.ModelViewSet):
+
+    queryset = Job.objects.select_related(
+        "company"
+    ).all()
+
+    serializer_class = JobSerializer
